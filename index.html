@@ -2,508 +2,326 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>악보 입력 변환 시험</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>악보 입력 변환 확인</title>
+<meta name="description" content="싸플래쉬 AI 파트 공유. MusicXML 악보로 드럼 채보 JSON과 반주 음원을 만들 수 있는지 확인한 결과">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-/* 레이아웃: 무대 조명 아래 연습실 콘솔. 위에서 결론 → 재생 시연 → 근거 순서. SSAPLASH FE 토큰 그대로 */
-:root {
-  --stage: #141a2a;
-  --stage-deep: #0e1320;
-  --surface: #1c2437;
-  --surface-2: #26304a;
-  --line: #34405c;
-  --ink: #f3efe6;
-  --ink-dim: #a9b0c2;
-  --ink-faint: #6e778d;
-  --brass: #e6b85c;
-  --head: #f2e8d5;
-  --ember: #e0875a;
-  --good: #5fb8ae;
-  --miss: #e05a5a;
-  --left: #7cc4ff;
-  --font: 'Pretendard Variable', Pretendard, 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
-  color-scheme: dark;
+:root{
+  color-scheme:light;
+  --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f3f2ee;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --s1-wash:rgba(42,120,214,.10);
+  --good:#006300; --bad:#b92b2b;
+  --accent:#2a78d6;
+  --shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
 }
-* { box-sizing: border-box; }
-body {
-  background: radial-gradient(1200px 700px at 50% -10%, #223052 0%, var(--stage) 55%, var(--stage-deep) 100%) fixed, var(--stage);
-  color: var(--ink);
-  font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232321;
+    --ink:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --s1-wash:rgba(57,135,229,.14);
+    --good:#0ca30c; --bad:#e66767;
+    --accent:#3987e5;
+    --shadow:none;
+  }
 }
-.wrap {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding-block: 48px 72px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid;
-  gap: 56px;
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232321;
+  --ink:#f0efec; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --s1-wash:rgba(57,135,229,.14);
+  --good:#0ca30c; --bad:#e66767;
+  --accent:#3987e5;
+  --shadow:none;
 }
-h1, h2, h3 { text-wrap: balance; margin: 0; }
-p { margin: 0; }
-.eyebrow {
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--brass);
-}
-code, .mono { font-family: var(--mono); }
-
-/* 첫 화면 */
-.hero { display: grid; gap: 20px; }
-.hero h1 { font-size: clamp(30px, 5.4vw, 52px); font-weight: 900; line-height: 1.15; letter-spacing: -.02em; }
-.hero h1 em { font-style: normal; color: var(--brass); }
-.hero .lead { color: var(--ink-dim); font-size: 17px; max-width: 62ch; }
-.verdicts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
-.verdict {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 18px;
-  display: grid;
-  gap: 8px;
-  align-content: start;
-}
-.verdict .from { font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint); }
-.verdict .what { font-weight: 700; font-size: 16px; }
-.pill {
-  justify-self: start;
-  font-size: 12.5px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-  letter-spacing: .02em;
-}
-.pill.ok { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
-.pill.no { background: color-mix(in srgb, var(--miss) 18%, transparent); color: #f08a8a; }
-.verdict .why { color: var(--ink-dim); font-size: 13.5px; }
-
-/* 섹션 공통 */
-section { display: grid; gap: 18px; }
-section > h2 { font-size: 24px; font-weight: 800; }
-section > .sub { color: var(--ink-dim); max-width: 70ch; }
-
-/* 시연 */
-.demo {
-  background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 70%, var(--stage-deep)) 100%);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 20px;
-  display: grid;
-  gap: 18px;
-}
-.score-box {
-  background: #fbfaf6;
-  border-radius: 10px;
-  padding: 10px;
-  overflow-x: auto;
-}
-.score-box img { display: block; width: 100%; min-width: 640px; height: auto; }
-.cap { font-size: 13px; color: var(--ink-faint); }
-
-.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.play {
-  width: 52px; height: 52px; border-radius: 50%;
-  border: 0; cursor: pointer;
-  background: var(--brass); color: var(--stage-deep);
-  display: grid; place-items: center;
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--brass) 16%, transparent);
-}
-.play:focus-visible, .seg button:focus-visible, #lanes:focus-visible { outline: 2px solid var(--left); outline-offset: 3px; }
-.play svg { width: 20px; height: 20px; fill: currentColor; }
-.seg { display: inline-flex; background: var(--stage-deep); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
-.seg button {
-  border: 0; background: transparent; color: var(--ink-dim);
-  padding: 7px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 13.5px;
-}
-.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); }
-.clock { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-dim); font-size: 14px; margin-left: auto; }
-
-.order { display: grid; gap: 8px; }
-.order-label { font-size: 13px; color: var(--ink-faint); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip {
-  min-width: 44px;
-  padding: 6px 8px 5px;
-  border-radius: 8px;
-  background: var(--stage-deep);
-  border: 1px solid var(--line);
-  text-align: center;
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 14px;
-  line-height: 1.1;
-  transition: background .15s, border-color .15s, color .15s;
-}
-.chip small { display: block; font-family: var(--font); font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; white-space: nowrap; }
-.chip.now { background: var(--brass); border-color: var(--brass); color: var(--stage-deep); }
-.chip.now small { color: var(--stage-deep); }
-
-.lanes-box { position: relative; }
-#lanes { display: block; width: 100%; height: 260px; border-radius: 10px; background: var(--stage-deep); cursor: pointer; }
-
-.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.fact { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 2px; }
-.fact b { font-family: var(--mono); font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--head); }
-.fact span { font-size: 13px; color: var(--ink-dim); }
-
-/* JSON·표 */
-.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-pre {
-  margin: 0;
-  background: var(--stage-deep);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: var(--mono);
-  font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--ink-dim);
-}
-pre .k { color: var(--left); }
-pre .s { color: var(--brass); }
-pre .n { color: var(--good); }
-.steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: s; }
-.steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; counter-increment: s; }
-.steps li::before {
-  content: counter(s);
-  width: 26px; height: 26px; border-radius: 50%;
-  border: 1px solid var(--line);
-  display: grid; place-items: center;
-  font-family: var(--mono); font-size: 12px; color: var(--brass);
-}
-.steps b { display: block; }
-.steps span { color: var(--ink-dim); font-size: 14px; }
-
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
-table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
-th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-weight: 500; color: var(--ink-faint); font-size: 12.5px; background: var(--surface); }
-tr:last-child td { border-bottom: 0; }
-td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-td .note { color: var(--ink-faint); font-size: 12.5px; }
-
-/* OMR */
-.omr { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-.omr figure { margin: 0; display: grid; gap: 8px; }
-.omr img { border-radius: 10px; background: #fff; display: block; width: 100%; height: auto; }
-.bad { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.bad li { padding-left: 16px; position: relative; color: var(--ink-dim); }
-.bad li::before { content: ""; position: absolute; left: 0; top: .62em; width: 7px; height: 7px; border-radius: 2px; background: var(--miss); }
-.bad b { color: var(--ink); font-weight: 700; }
-
-/* 제안 */
-.plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 10px; align-content: start; }
-.card h3 { font-size: 16px; }
-.card ul { margin: 0; padding-left: 18px; color: var(--ink-dim); font-size: 14px; display: grid; gap: 6px; }
-.card .big { font-family: var(--mono); font-size: 28px; color: var(--brass); line-height: 1; }
-footer { color: var(--ink-faint); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 4px; }
-
-@media (max-width: 820px) {
-  .verdicts, .plan { grid-template-columns: minmax(0, 1fr); }
-  .two, .omr { grid-template-columns: minmax(0, 1fr); }
-  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  #lanes { height: 230px; }
-}
-@media (prefers-reduced-motion: reduce) { .chip { transition: none; } }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--page);color:var(--ink);font-family:"Pretendard Variable",Pretendard,"Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.7;word-break:keep-all;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;background:var(--surface-2);padding:1px 6px;border-radius:5px}
+h1,h2,h3{line-height:1.3;margin:0;font-weight:700;letter-spacing:-.01em}
+p{margin:0 0 12px}
+ul{margin:0 0 12px;padding-left:22px}
+li{margin:3px 0}
+li::marker{color:var(--muted)}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:36px;max-width:1260px;margin:0 auto;padding:0 24px}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:36px 0;font-size:13.5px}
+nav.toc .brand{font-weight:800;font-size:15px;margin-bottom:18px;color:var(--ink)}
+nav.toc a{display:block;color:var(--ink-2);padding:4px 10px;border-left:2px solid transparent;border-radius:0 6px 6px 0}
+nav.toc a:hover{background:var(--surface-2);text-decoration:none}
+nav.toc a.active{color:var(--ink);border-left-color:var(--accent);font-weight:600;background:var(--s1-wash)}
+main{max-width:940px;padding:40px 0 100px;min-width:0}
+@media (max-width:1100px){.layout{grid-template-columns:1fr;gap:0;padding:0 16px}nav.toc{position:static;height:auto;padding:24px 0 0;border-bottom:1px solid var(--grid)}nav.toc .links{display:flex;flex-wrap:wrap;gap:4px 2px;padding-bottom:16px}nav.toc a{border:1px solid var(--grid);border-radius:999px;padding:3px 10px}nav.toc a.active{border-color:var(--accent)}main{padding-top:24px}}
+header.hero{padding:8px 0 28px;border-bottom:1px solid var(--grid);margin-bottom:40px}
+.eyebrow{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.04em;margin-bottom:10px}
+header.hero h1{font-size:34px;letter-spacing:-.02em}
+header.hero .lead{font-size:17px;color:var(--ink-2);margin-top:14px;max-width:720px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:13px;margin-top:16px}
+section{margin:0 0 56px}
+section>h2{font-size:26px;margin:0 0 6px;scroll-margin-top:24px}
+.sub{color:var(--ink-2);font-size:15.5px;margin-bottom:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.verdict{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0}
+@media (max-width:720px){.verdict{grid-template-columns:1fr}}
+.verdict .role{font-size:12.5px;font-weight:700;color:var(--accent);letter-spacing:.04em}
+.verdict .name{font-size:22px;font-weight:800;margin:4px 0 8px}
+.verdict .name.ok{color:var(--good)} .verdict .name.no{color:var(--bad)}
+.verdict p{font-size:14.5px;color:var(--ink-2);margin:0}
+.callout{border-left:3px solid var(--accent);background:var(--s1-wash);padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0}
+.callout .t{font-weight:700;margin-bottom:4px}
+.callout ul:last-child,.callout p:last-child{margin-bottom:0}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 0}
+@media (max-width:720px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.tile .l{font-size:12.5px;color:var(--muted)} .tile .v{font-size:24px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums} .tile .d{font-size:12px;color:var(--ink-2)}
+.tbl{overflow-x:auto;margin:10px 0 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.tbl table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+.tbl th,.tbl td{padding:8px 12px;border-bottom:1px solid var(--grid);text-align:left}
+.tbl th{background:var(--surface-2);font-weight:700;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.small{font-size:13px;color:var(--muted)}
+.fig{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin:16px 0;box-shadow:var(--shadow)}
+.fig .ft{font-weight:700;font-size:15px}
+.fig .fs{font-size:13px;color:var(--ink-2);margin:2px 0 10px}
+.score{overflow-x:auto;background:#fff;border-radius:10px;border:1px solid var(--border)}
+.score img{display:block;width:100%;min-width:640px;height:auto}
+.fig img.omr{display:block;width:100%;height:auto;border-radius:10px;background:#fff}
+/* 플레이어 */
+.player{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:14px 0 10px}
+.play{width:44px;height:44px;border-radius:50%;border:0;background:var(--accent);color:#fff;cursor:pointer;display:grid;place-items:center;flex:none}
+.play svg{width:18px;height:18px;fill:currentColor}
+.seg{display:inline-flex;border:1px solid var(--border);background:var(--surface-2);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--ink-2);padding:5px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
+.clock{margin-left:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 10px}
+.chip{min-width:40px;text-align:center;padding:3px 7px;border-radius:7px;font-size:13px;font-weight:600;background:var(--surface-2);color:var(--ink-2);font-variant-numeric:tabular-nums;line-height:1.3}
+.chip small{display:block;font-size:10.5px;font-weight:500;color:var(--muted);white-space:nowrap}
+.chip.now{background:var(--accent);color:#fff}
+.chip.now small{color:#fff}
+#lanes{display:block;width:100%;height:150px;border-radius:10px;background:var(--surface-2);cursor:pointer}
+.play:focus-visible,.seg button:focus-visible,#lanes:focus-visible,.theme:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);padding-top:20px;margin-top:40px}
+.theme{position:fixed;right:16px;top:16px;z-index:5;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow)}
 </style>
 </head>
 <body>
+<button class="theme" id="themeBtn" type="button" aria-label="테마 전환">🌓 테마</button>
+<div class="layout">
+<nav class="toc" aria-label="목차">
+  <div class="brand">싸플래쉬 AI 파트<br><span style="color:var(--muted);font-weight:500">악보 입력 변환 확인</span></div>
+  <div class="links">
+    <a href="#result">1. 결론</a>
+    <a href="#demo">2. 시연</a>
+    <a href="#samples">3. 공개 샘플 변환</a>
+    <a href="#omr">4. 사진·PDF 인식</a>
+    <a href="#plan">5. 제안</a>
+  </div>
+</nav>
 
-<div class="wrap">
+<main>
+<header class="hero">
+  <div class="eyebrow">AI 파트 · FE 요청 CHART-001 회신</div>
+  <h1>악보 입력 변환 확인</h1>
+  <p class="lead">악보 파일이 MusicXML이면 드럼 파트로 채보 JSON을, 나머지 악기 파트로 드럼리스 MR을 만들 수 있음. 사진·스캔 PDF는 드럼을 읽지 못함.</p>
+  <div class="meta"><span>작성 김호준</span><span>확인 2026-11-02</span><span>저장소 코드 변경 없이 임시 환경에서 시험</span></div>
+</header>
 
-  <header class="hero">
-    <div class="eyebrow">CHART-001 · FE 요청 회신용 시험 · 2026-11-02</div>
-    <h1>악보 파일이 <em>MusicXML</em>이면<br>채보와 반주를 둘 다 만들 수 있음</h1>
-    <p class="lead">드럼 파트는 BE가 지금 받는 채보 JSON으로, 나머지 악기는 반주 음원으로 바꿔 봤음. 사진·스캔 PDF는 공개 OMR 도구로 시험했는데 드럼 기보를 읽지 못했음.</p>
-    <div class="verdicts">
-      <div class="verdict">
-        <div class="from">드럼 MusicXML → 채보 JSON</div>
-        <span class="pill ok">됨</span>
-        <div class="why">음표마다 GM 드럼 번호가 적혀 있어서 패드를 추측 없이 정함. 저장소의 <code>validate_chart</code> 통과.</div>
-      </div>
-      <div class="verdict">
-        <div class="from">다른 악기 MusicXML → 반주 음원</div>
-        <span class="pill ok">됨</span>
-        <div class="why">음표를 사운드폰트로 합성. 29초 반주를 0.1초 만에 만듦. 올린 악기만 소리가 남.</div>
-      </div>
-      <div class="verdict">
-        <div class="from">사진·스캔 PDF → 드럼 인식</div>
-        <span class="pill no">안 됨</span>
-        <div class="why">oemer로 깨끗한 디지털 악보 이미지를 넣어도 하이햇을 하나도 못 찾고 반복 기호도 못 읽음.</div>
-      </div>
+<section id="result">
+  <h2>1. 결론</h2>
+  <div class="verdict">
+    <div class="card">
+      <div class="role">드럼 MusicXML → 채보 JSON</div>
+      <div class="name ok">가능</div>
+      <p>음표마다 GM 드럼 번호가 있어 패드를 바로 정함. BE 검증 조건 통과.</p>
     </div>
-  </header>
-
-  <section>
-    <div class="eyebrow">직접 들어 보기</div>
-    <h2>시험 악보 한 장이 채보와 반주가 되는 과정</h2>
-    <p class="sub">드럼·베이스·피아노 3파트, 9마디짜리 시험용 악보임. 도돌이표, 1·2번 괄호, 중간 템포 변경 100→140, D.S. al Coda를 일부러 다 넣었음. 재생하면 아래 레인에 채보 JSON의 노트가 그 시각에 지나감.</p>
-
-    <div class="demo">
-      <div class="score-box"><img src="score.png" alt="드럼·베이스·피아노 3파트 시험 악보. 도돌이표, 1·2번 괄호, segno, To Coda, D.S. al Coda, Coda 표시가 있음" width="2400" height="1430"></div>
-      <div class="cap">입력: 시험용 MusicXML을 verovio로 그린 악보. 실제 변환은 이 그림이 아니라 MusicXML 파일을 읽음.</div>
-
-      <div class="controls">
-        <button class="play" id="play" aria-label="재생"><svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4.5v15l13-7.5z"/></svg></button>
-        <div class="seg" role="group" aria-label="들을 소리">
-          <button id="srcAccomp" aria-pressed="true">반주만 · 베이스+피아노</button>
-          <button id="srcFull" aria-pressed="false">드럼까지 전부</button>
-        </div>
-        <div class="clock" id="clock">0:00.0 / 0:27.1</div>
-      </div>
-
-      <div class="order">
-        <div class="order-label">연주 순서. 악보에 적힌 마디 9개를 반복 기호대로 펼치면 13마디가 됨</div>
-        <div class="chips" id="chips"></div>
-      </div>
-
-      <div class="lanes-box"><canvas id="lanes" tabindex="0" aria-label="채보 노트 레인. 누르면 그 위치로 이동"></canvas></div>
-
-      <div class="facts">
-        <div class="fact"><b>156</b><span>채보 노트 수<br>킥 26 · 스네어 26 · 하이햇 104</span></div>
-        <div class="fact"><b>13 / 13</b><span>마디 첫 박 킥과 베이스 시각이 같은 마디</span></div>
-        <div class="fact"><b>2 ms</b><span>MusicXML → 채보 JSON 처리 시간</span></div>
-        <div class="fact"><b>0.08 s</b><span>29초 반주 wav 합성 시간</span></div>
-      </div>
+    <div class="card">
+      <div class="role">다른 악기 MusicXML → 드럼리스 MR</div>
+      <div class="name ok">가능</div>
+      <p>드럼 빼고 올린 악기 파트만 사운드폰트로 합성. 올리지 않은 악기는 소리가 없음.</p>
     </div>
-  </section>
-
-  <section>
-    <div class="eyebrow">어떻게 바꾸나</div>
-    <h2>MusicXML 한 파일에서 두 결과가 나옴</h2>
-    <div class="two">
-      <ol class="steps">
-        <li><div><b>연주 순서 펼치기</b><span>첫 파트의 도돌이표·괄호·D.S./D.C.·Fine·Coda를 읽어 마디 순서를 정하고, 모든 파트가 이 순서를 같이 씀. 파트끼리 어긋날 일이 없음.</span></div></li>
-        <li><div><b>마디마다 초 단위 시각 계산</b><span>악보의 템포 지시를 따라 각 마디 시작 시각을 구하고, 마디 안 음표 위치를 더해 <code>timeMs</code>를 만듦.</span></div></li>
-        <li><div><b>드럼 음표 → 패드</b><span>음표의 악기 id → <code>midi-unpitched</code> GM 번호 → 지금 쓰는 GM→패드 대응표. HIHAT_PEDAL은 BE가 받는 8종에 맞춰 HIHAT으로 합침.</span></div></li>
-        <li><div><b>채보 JSON 만들기</b><span>저장소의 <code>build_chart</code>·<code>validate_chart</code>를 그대로 씀. BE는 지금처럼 3난이도로 나눠 저장하면 됨.</span></div></li>
-        <li><div><b>나머지 파트 → 반주</b><span>올린 악기 파트만 골라 사운드폰트로 합성해 wav를 만듦. 드럼리스 MR처럼 저장해 두고 재생.</span></div></li>
-      </ol>
-      <pre aria-label="채보 JSON 앞부분"><code>{
-  <span class="k">"schemaVersion"</span>: <span class="n">1</span>,
-  <span class="k">"generator"</span>: <span class="s">"ADT_MODEL"</span>,
-  <span class="k">"generatorVersion"</span>: <span class="s">"MUSICXML-test"</span>,
-  <span class="k">"metrics"</span>: { <span class="k">"transcribeMs"</span>: <span class="n">2</span>, <span class="k">"durationMs"</span>: <span class="n">27086</span> },
-  <span class="k">"charts"</span>: [{
-    <span class="k">"difficulty"</span>: <span class="s">"NORMAL"</span>,
-    <span class="k">"notationStatus"</span>: <span class="s">"UNAVAILABLE"</span>,
-    <span class="k">"notes"</span>: [
-      { <span class="k">"noteId"</span>: <span class="s">"n0001"</span>, <span class="k">"timeMs"</span>: <span class="n">0</span>,   <span class="k">"pad"</span>: <span class="s">"KICK"</span>,  <span class="k">"velocityHint"</span>: <span class="n">90</span> },
-      { <span class="k">"noteId"</span>: <span class="s">"n0002"</span>, <span class="k">"timeMs"</span>: <span class="n">0</span>,   <span class="k">"pad"</span>: <span class="s">"HIHAT"</span>, <span class="k">"velocityHint"</span>: <span class="n">90</span> },
-      { <span class="k">"noteId"</span>: <span class="s">"n0003"</span>, <span class="k">"timeMs"</span>: <span class="n">300</span>, <span class="k">"pad"</span>: <span class="s">"HIHAT"</span>, <span class="k">"velocityHint"</span>: <span class="n">90</span> },
-      { <span class="k">"noteId"</span>: <span class="s">"n0004"</span>, <span class="k">"timeMs"</span>: <span class="n">600</span>, <span class="k">"pad"</span>: <span class="s">"SNARE"</span>, <span class="k">"velocityHint"</span>: <span class="n">90</span> },
-      …
-    ],
-    <span class="k">"timing"</span>: { <span class="k">"bpm"</span>: <span class="n">100.0</span>, <span class="k">"offsetMs"</span>: <span class="n">0</span>, <span class="k">"timeSignature"</span>: <span class="s">"4/4"</span> }
-  }]
-}</code></pre>
+    <div class="card">
+      <div class="role">사진·스캔 PDF → 드럼</div>
+      <div class="name no">불가</div>
+      <p>공개 OMR 도구가 드럼 기보를 못 읽음.</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section>
-    <div class="eyebrow">실제 악보 프로그램 파일</div>
-    <h2>공개 MusicXML 샘플 5개도 변환됨</h2>
-    <p class="sub">MuseScore·Finale 등에서 내보낸 공개 파일로 돌렸음. 5개 모두 음표마다 악기 id와 GM 번호가 들어 있었음. 버린 노트는 대부분 우리 패드에 없는 타악기임.</p>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>파일</th><th>만든 프로그램</th><th style="text-align:right">드럼 음표</th><th style="text-align:right">채보 노트</th><th>빠진 노트</th></tr></thead>
-        <tbody>
-          <tr><td>drums-basic-groove</td><td>BandBuddy</td><td class="num">24</td><td class="num">24</td><td>없음 <div class="note">템포 65에서 8분 하이햇 간격 462ms, 계산값과 같음</div></td></tr>
-          <tr><td>drum_sample</td><td>Finale 27</td><td class="num">36</td><td class="num">28</td><td>카우벨 8개 <div class="note">패드에 없는 악기</div></td></tr>
-          <tr><td>testDrumset1</td><td>MuseScore 0.7</td><td class="num">8</td><td class="num">4</td><td>GM 35·41 각 1개, 콩가 2개 <div class="note">35 Acoustic Bass Drum·41 Low Floor Tom은 대응표에 추가하면 됨</div></td></tr>
-          <tr><td>testDrumset2</td><td>MuseScore 0.7</td><td class="num">12</td><td class="num">6</td><td>GM 35 1개, 콩가 5개</td></tr>
-          <tr><td>baiao-miranda</td><td>MuseScore 4.3</td><td class="num">48</td><td class="num">8</td><td>트라이앵글 등 40개 <div class="note">브라질 타악기 악보라 드럼 세트가 아님</div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section>
-    <div class="eyebrow">사진·PDF 입력</div>
-    <h2>OMR은 드럼 기보를 못 읽음</h2>
-    <p class="sub">위 시험 악보를 그대로 그린 이미지를 oemer에 넣었음. 스캔이나 사진이 아니라 가장 깨끗한 디지털 악보인데도 결과가 아래와 같았음.</p>
-    <div class="omr">
-      <figure>
-        <img src="omr_result.jpg" alt="oemer 인식 결과. 하이햇의 x 모양 음표에는 인식 상자가 없고, 킥과 스네어만 보통 음표로 잡힘" width="1600" height="963" loading="lazy">
-        <figcaption class="cap">oemer가 찾은 음표에 상자를 그린 그림. 드럼 줄의 x 모양 하이햇에는 상자가 없음.</figcaption>
-      </figure>
-      <ul class="bad">
-        <li><b>하이햇 72개를 하나도 못 찾음.</b> x 모양 음표 머리를 음표로 보지 않음.</li>
-        <li><b>킥·스네어는 음높이 있는 보통 음표로 읽음.</b> 어느 악기인지 정보가 없어짐.</li>
-        <li><b>도돌이표·괄호·segno·Coda가 결과에 0개.</b> 연주 순서를 만들 수 없음.</li>
-        <li><b>3파트를 1파트로 합쳐 버림.</b> 9마디가 30마디로 나옴.</li>
-        <li><b>드럼만 있는 악보는 24개 중 3개만 나옴.</b></li>
-        <li><b>한 페이지에 CPU로 약 3분.</b></li>
-        <li>Audiveris는 드럼 지원을 확인할 문서가 없고 AGPL이라 서버에 넣기 어려움. 드럼 전용 OMR은 공개 학습 데이터셋 정도만 있고 바로 쓸 모델은 못 찾았음.</li>
-      </ul>
-    </div>
-  </section>
-
-  <section>
-    <div class="eyebrow">제안</div>
-    <h2>1차는 MusicXML만 받기</h2>
-    <div class="plan">
-      <div class="card">
-        <h3>받는 형식</h3>
-        <ul>
-          <li>MusicXML <code>.musicxml</code>·<code>.xml</code>, 압축본 <code>.mxl</code></li>
-          <li>사진·스캔 PDF·디지털 PDF는 이번에 제외</li>
-          <li>MuseScore·Guitar Pro·Sibelius·Finale에서 MusicXML로 내보내기 안내</li>
-        </ul>
+<section id="demo">
+  <h2>2. 시연</h2>
+  <p class="sub">드럼·베이스·피아노 3파트 시험 악보. 도돌이표, 1·2번 괄호, 템포 100→140, D.S. al Coda를 넣었음.</p>
+  <div class="fig">
+    <div class="score"><img src="score.png" alt="드럼·베이스·피아노 3파트 시험 악보" width="2400" height="1430"></div>
+    <div class="player">
+      <button class="play" id="play" type="button" aria-label="재생"><svg viewBox="0 0 24 24" id="playIcon"><path d="M7 4.5v15l13-7.5z"/></svg></button>
+      <div class="seg" role="group" aria-label="들을 소리">
+        <button type="button" id="srcAccomp" aria-pressed="true">드럼리스 MR</button>
+        <button type="button" id="srcFull" aria-pressed="false">드럼 포함</button>
       </div>
-      <div class="card">
-        <div class="big">3~4일</div>
-        <h3>1차 구현 크기</h3>
-        <ul>
-          <li>MusicXML 읽기·반복 펼치기·템포를 정식 모듈로</li>
-          <li>GM→패드 대응표 보강, 채보 워커 경로 추가</li>
-          <li>반주 합성·업로드, 테스트</li>
-          <li>조사는 이 시험으로 끝남</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>라이선스·남은 확인</h3>
-        <ul>
-          <li>tinysoundfont MIT. MusicXML 읽기는 표준 라이브러리만 씀</li>
-          <li>사운드폰트 GeneralUser GS는 반입 전에 배포 조건 원문 확인 필요</li>
-          <li>템포가 중간에 바뀌어도 <code>timeMs</code>는 맞지만 <code>timing.bpm</code>에는 첫 템포 하나만 들어감</li>
-          <li>메일의 9패드와 달리 채보 JSON은 8종만 받음. HIHAT_PEDAL 처리 합의 필요</li>
-        </ul>
-      </div>
+      <div class="clock" id="clock">0:00.0 / 0:27.1</div>
     </div>
-  </section>
+    <div class="chips" id="chips"></div>
+    <canvas id="lanes" tabindex="0" aria-label="채보 노트. 누르면 그 위치로 이동"></canvas>
+    <p class="small" style="margin:8px 0 0">위: 반복 기호대로 펼친 연주 순서 13마디. 아래: 만든 채보 JSON의 노트. 드럼리스 MR은 베이스·피아노 파트만 합성한 소리, 드럼 포함은 비교용으로 드럼 파트까지 합성한 소리.</p>
+  </div>
+  <div class="tiles">
+    <div class="tile"><div class="l">채보 노트</div><div class="v">156</div><div class="d">킥 26 · 스네어 26 · 하이햇 104</div></div>
+    <div class="tile"><div class="l">파트 정렬</div><div class="v">13/13</div><div class="d">마디 첫 박 킥·베이스 시각 일치</div></div>
+    <div class="tile"><div class="l">채보 변환</div><div class="v">2 ms</div><div class="d">MusicXML → 채보 JSON</div></div>
+    <div class="tile"><div class="l">드럼리스 MR 합성</div><div class="v">0.08 s</div><div class="d">29초 분량</div></div>
+  </div>
+</section>
 
-  <footer>
-    <div>AI 파트 김호준 · 저장소 코드는 바꾸지 않고 임시 환경에서 시험함.</div>
-    <div>도구: Python 표준 라이브러리 XML 파서, 저장소 <code>ssaplash_ai.chart.chart_json</code>, tinysoundfont 0.3.7, GeneralUser GS, verovio, oemer 0.1.8</div>
-  </footer>
+<section id="samples">
+  <h2>3. 공개 샘플 변환</h2>
+  <p class="sub">악보 프로그램에서 내보낸 공개 MusicXML 5개. 빠진 노트는 대부분 우리 패드에 없는 타악기임.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>파일</th><th>프로그램</th><th class="n">드럼 음표</th><th class="n">채보 노트</th><th>빠진 것</th></tr></thead>
+    <tbody>
+      <tr><td>drums-basic-groove</td><td>BandBuddy</td><td class="n">24</td><td class="n">24</td><td>없음</td></tr>
+      <tr><td>drum_sample</td><td>Finale 27</td><td class="n">36</td><td class="n">28</td><td>카우벨 8</td></tr>
+      <tr><td>testDrumset1</td><td>MuseScore 0.7</td><td class="n">8</td><td class="n">4</td><td>콩가 2, GM 35·41 각 1</td></tr>
+      <tr><td>testDrumset2</td><td>MuseScore 0.7</td><td class="n">12</td><td class="n">6</td><td>콩가 5, GM 35 1</td></tr>
+      <tr><td>baiao-miranda</td><td>MuseScore 4.3</td><td class="n">48</td><td class="n">8</td><td>브라질 타악기 40</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">GM 35 Acoustic Bass Drum·41 Low Floor Tom은 대응표에 추가하면 됨.</p>
+</section>
+
+<section id="omr">
+  <h2>4. 사진·PDF 인식</h2>
+  <p class="sub">위 시험 악보 이미지를 OMR 도구 oemer에 넣었음. 스캔이 아닌 깨끗한 디지털 이미지임.</p>
+  <div class="fig">
+    <div class="ft">oemer 인식 결과</div>
+    <div class="fs">상자가 인식한 음표. 드럼 줄의 x 모양 하이햇에는 상자가 없음.</div>
+    <img class="omr" src="omr_result.jpg" alt="oemer 인식 결과. 하이햇에는 인식 상자가 없음" width="1600" height="963" loading="lazy">
+  </div>
+  <ul>
+    <li>하이햇 72개 전부 놓침. 킥·스네어는 보통 음표로 읽어 악기 정보가 사라짐</li>
+    <li>도돌이표·괄호·segno·Coda 인식 0개, 3파트를 1파트로 합침</li>
+    <li>드럼만 있는 악보는 24개 중 3개만 나옴. 한 페이지에 CPU로 약 3분</li>
+    <li>Audiveris는 드럼 지원이 확인되지 않고 AGPL이라 서버에 넣기 어려움</li>
+  </ul>
+</section>
+
+<section id="plan">
+  <h2>5. 제안</h2>
+  <div class="callout">
+    <div class="t">1차는 MusicXML만 받기</div>
+    <ul>
+      <li>받는 형식: <code>.musicxml</code>·<code>.xml</code>·<code>.mxl</code>. 사용자에게 MuseScore 등에서 MusicXML로 내보내기를 안내</li>
+      <li>1차 구현 3~4일: MusicXML 읽기·반복 처리, GM→패드 대응표 보강, 워커 경로 추가, 드럼리스 MR 합성·업로드</li>
+    </ul>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>정할 것</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td>HIHAT_PEDAL</td><td>채보 JSON은 8패드만 받음. 지금은 HIHAT으로 합쳐 냄</td></tr>
+      <tr><td>템포 변경</td><td>노트 시각은 맞지만 <code>timing.bpm</code>에는 첫 템포 하나만 들어감</td></tr>
+      <tr><td>MR 소리 품질</td><td>합성 소리라 음원에서 분리한 드럼리스 MR보다 기계적임. 실제 곡 악보로는 아직 안 들어 봄</td></tr>
+      <tr><td>사운드폰트</td><td>GeneralUser GS 배포 조건을 반입 전에 원문으로 확인</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>도구: Python 표준 라이브러리 XML 파서, 저장소 <code>ssaplash_ai.chart.chart_json</code>, tinysoundfont 0.3.7, GeneralUser GS, verovio, oemer 0.1.8</footer>
+</main>
 </div>
 
 <audio id="aAccomp" src="accomp.mp3" preload="auto"></audio>
 <audio id="aFull" src="full.mp3" preload="auto"></audio>
 
 <script>
-const DATA = {"order":["1","2","3","4","2","3","5","6","7","8","6","7","9"],"measureStart":[0.0,2.4,4.8,7.2,9.6,12.0,14.4,16.8,18.514,20.229,21.943,23.657,25.371],"durationSec":27.086};
-// 노트는 채보 JSON에서 그대로 가져옴: [timeMs, pad]
-const NOTES = [[0,"KICK"],[0,"HIHAT"],[300,"HIHAT"],[600,"SNARE"],[600,"HIHAT"],[900,"HIHAT"],[1200,"KICK"],[1200,"HIHAT"],[1500,"HIHAT"],[1800,"SNARE"],[1800,"HIHAT"],[2100,"HIHAT"],[2400,"KICK"],[2400,"HIHAT"],[2700,"HIHAT"],[3000,"SNARE"],[3000,"HIHAT"],[3300,"HIHAT"],[3600,"KICK"],[3600,"HIHAT"],[3900,"HIHAT"],[4200,"SNARE"],[4200,"HIHAT"],[4500,"HIHAT"],[4800,"KICK"],[4800,"HIHAT"],[5100,"HIHAT"],[5400,"SNARE"],[5400,"HIHAT"],[5700,"HIHAT"],[6000,"KICK"],[6000,"HIHAT"],[6300,"HIHAT"],[6600,"SNARE"],[6600,"HIHAT"],[6900,"HIHAT"],[7200,"KICK"],[7200,"HIHAT"],[7500,"HIHAT"],[7800,"SNARE"],[7800,"HIHAT"],[8100,"HIHAT"],[8400,"KICK"],[8400,"HIHAT"],[8700,"HIHAT"],[9000,"SNARE"],[9000,"HIHAT"],[9300,"HIHAT"],[9600,"KICK"],[9600,"HIHAT"],[9900,"HIHAT"],[10200,"SNARE"],[10200,"HIHAT"],[10500,"HIHAT"],[10800,"KICK"],[10800,"HIHAT"],[11100,"HIHAT"],[11400,"SNARE"],[11400,"HIHAT"],[11700,"HIHAT"],[12000,"KICK"],[12000,"HIHAT"],[12300,"HIHAT"],[12600,"SNARE"],[12600,"HIHAT"],[12900,"HIHAT"],[13200,"KICK"],[13200,"HIHAT"],[13500,"HIHAT"],[13800,"SNARE"],[13800,"HIHAT"],[14100,"HIHAT"],[14400,"KICK"],[14400,"HIHAT"],[14700,"HIHAT"],[15000,"SNARE"],[15000,"HIHAT"],[15300,"HIHAT"],[15600,"KICK"],[15600,"HIHAT"],[15900,"HIHAT"],[16200,"SNARE"],[16200,"HIHAT"],[16500,"HIHAT"],[16800,"KICK"],[16800,"HIHAT"],[17014,"HIHAT"],[17229,"SNARE"],[17229,"HIHAT"],[17443,"HIHAT"],[17657,"KICK"],[17657,"HIHAT"],[17871,"HIHAT"],[18086,"SNARE"],[18086,"HIHAT"],[18300,"HIHAT"],[18514,"KICK"],[18514,"HIHAT"],[18729,"HIHAT"],[18943,"SNARE"],[18943,"HIHAT"],[19157,"HIHAT"],[19371,"KICK"],[19371,"HIHAT"],[19586,"HIHAT"],[19800,"SNARE"],[19800,"HIHAT"],[20014,"HIHAT"],[20229,"KICK"],[20229,"HIHAT"],[20443,"HIHAT"],[20657,"SNARE"],[20657,"HIHAT"],[20871,"HIHAT"],[21086,"KICK"],[21086,"HIHAT"],[21300,"HIHAT"],[21514,"SNARE"],[21514,"HIHAT"],[21729,"HIHAT"],[21943,"KICK"],[21943,"HIHAT"],[22157,"HIHAT"],[22371,"SNARE"],[22371,"HIHAT"],[22586,"HIHAT"],[22800,"KICK"],[22800,"HIHAT"],[23014,"HIHAT"],[23229,"SNARE"],[23229,"HIHAT"],[23443,"HIHAT"],[23657,"KICK"],[23657,"HIHAT"],[23871,"HIHAT"],[24086,"SNARE"],[24086,"HIHAT"],[24300,"HIHAT"],[24514,"KICK"],[24514,"HIHAT"],[24729,"HIHAT"],[24943,"SNARE"],[24943,"HIHAT"],[25157,"HIHAT"],[25371,"KICK"],[25371,"HIHAT"],[25586,"HIHAT"],[25800,"SNARE"],[25800,"HIHAT"],[26014,"HIHAT"],[26229,"KICK"],[26229,"HIHAT"],[26443,"HIHAT"],[26657,"SNARE"],[26657,"HIHAT"],[26871,"HIHAT"]];
-const MARK = {0:'♩=100',1:'반복 시작',3:'1번 괄호',4:'다시 2마디',6:'2번 괄호',7:'segno ♩=140',9:'D.S.',10:'segno로',11:'To Coda',12:'Coda'};
-const PADS = ['CRASH','RIDE','HIHAT','SMALL_TOM','MID_TOM','FLOOR_TOM','SNARE','KICK'];
-const NAMES = {CRASH:'크래시',RIDE:'라이드',HIHAT:'하이햇',SMALL_TOM:'작은 탐',MID_TOM:'중간 탐',FLOOR_TOM:'플로어 탐',SNARE:'스네어',KICK:'킥'};
-const css = getComputedStyle(document.documentElement);
-const tok = n => css.getPropertyValue(n).trim();
-const COLORS = {CRASH:tok('--left'),RIDE:tok('--left'),HIHAT:tok('--brass'),SMALL_TOM:tok('--good'),MID_TOM:tok('--good'),FLOOR_TOM:tok('--good'),SNARE:tok('--head'),KICK:tok('--ember')};
+(function(){
+const links=[...document.querySelectorAll('nav.toc a[href^="#"]')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id));}});},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>io.observe(s));
+const btn=document.getElementById('themeBtn');
+btn.addEventListener('click',()=>{const cur=document.documentElement.getAttribute('data-theme');const dark=cur?cur==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',dark?'light':'dark');try{localStorage.setItem('theme',dark?'light':'dark');}catch(e){}});
+try{const t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}
+})();
 
-const chips = document.getElementById('chips');
-DATA.order.forEach((m, i) => {
-  const c = document.createElement('div');
-  c.className = 'chip';
-  c.innerHTML = m + (MARK[i] ? '<small>' + MARK[i] + '</small>' : '<small>&nbsp;</small>');
-  chips.appendChild(c);
-});
-const chipEls = [...chips.children];
+const DATA={"order":["1","2","3","4","2","3","5","6","7","8","6","7","9"],"measureStart":[0.0,2.4,4.8,7.2,9.6,12.0,14.4,16.8,18.514,20.229,21.943,23.657,25.371],"durationSec":27.086};
+const NOTES=[[0,"KICK"],[0,"HIHAT"],[300,"HIHAT"],[600,"SNARE"],[600,"HIHAT"],[900,"HIHAT"],[1200,"KICK"],[1200,"HIHAT"],[1500,"HIHAT"],[1800,"SNARE"],[1800,"HIHAT"],[2100,"HIHAT"],[2400,"KICK"],[2400,"HIHAT"],[2700,"HIHAT"],[3000,"SNARE"],[3000,"HIHAT"],[3300,"HIHAT"],[3600,"KICK"],[3600,"HIHAT"],[3900,"HIHAT"],[4200,"SNARE"],[4200,"HIHAT"],[4500,"HIHAT"],[4800,"KICK"],[4800,"HIHAT"],[5100,"HIHAT"],[5400,"SNARE"],[5400,"HIHAT"],[5700,"HIHAT"],[6000,"KICK"],[6000,"HIHAT"],[6300,"HIHAT"],[6600,"SNARE"],[6600,"HIHAT"],[6900,"HIHAT"],[7200,"KICK"],[7200,"HIHAT"],[7500,"HIHAT"],[7800,"SNARE"],[7800,"HIHAT"],[8100,"HIHAT"],[8400,"KICK"],[8400,"HIHAT"],[8700,"HIHAT"],[9000,"SNARE"],[9000,"HIHAT"],[9300,"HIHAT"],[9600,"KICK"],[9600,"HIHAT"],[9900,"HIHAT"],[10200,"SNARE"],[10200,"HIHAT"],[10500,"HIHAT"],[10800,"KICK"],[10800,"HIHAT"],[11100,"HIHAT"],[11400,"SNARE"],[11400,"HIHAT"],[11700,"HIHAT"],[12000,"KICK"],[12000,"HIHAT"],[12300,"HIHAT"],[12600,"SNARE"],[12600,"HIHAT"],[12900,"HIHAT"],[13200,"KICK"],[13200,"HIHAT"],[13500,"HIHAT"],[13800,"SNARE"],[13800,"HIHAT"],[14100,"HIHAT"],[14400,"KICK"],[14400,"HIHAT"],[14700,"HIHAT"],[15000,"SNARE"],[15000,"HIHAT"],[15300,"HIHAT"],[15600,"KICK"],[15600,"HIHAT"],[15900,"HIHAT"],[16200,"SNARE"],[16200,"HIHAT"],[16500,"HIHAT"],[16800,"KICK"],[16800,"HIHAT"],[17014,"HIHAT"],[17229,"SNARE"],[17229,"HIHAT"],[17443,"HIHAT"],[17657,"KICK"],[17657,"HIHAT"],[17871,"HIHAT"],[18086,"SNARE"],[18086,"HIHAT"],[18300,"HIHAT"],[18514,"KICK"],[18514,"HIHAT"],[18729,"HIHAT"],[18943,"SNARE"],[18943,"HIHAT"],[19157,"HIHAT"],[19371,"KICK"],[19371,"HIHAT"],[19586,"HIHAT"],[19800,"SNARE"],[19800,"HIHAT"],[20014,"HIHAT"],[20229,"KICK"],[20229,"HIHAT"],[20443,"HIHAT"],[20657,"SNARE"],[20657,"HIHAT"],[20871,"HIHAT"],[21086,"KICK"],[21086,"HIHAT"],[21300,"HIHAT"],[21514,"SNARE"],[21514,"HIHAT"],[21729,"HIHAT"],[21943,"KICK"],[21943,"HIHAT"],[22157,"HIHAT"],[22371,"SNARE"],[22371,"HIHAT"],[22586,"HIHAT"],[22800,"KICK"],[22800,"HIHAT"],[23014,"HIHAT"],[23229,"SNARE"],[23229,"HIHAT"],[23443,"HIHAT"],[23657,"KICK"],[23657,"HIHAT"],[23871,"HIHAT"],[24086,"SNARE"],[24086,"HIHAT"],[24300,"HIHAT"],[24514,"KICK"],[24514,"HIHAT"],[24729,"HIHAT"],[24943,"SNARE"],[24943,"HIHAT"],[25157,"HIHAT"],[25371,"KICK"],[25371,"HIHAT"],[25586,"HIHAT"],[25800,"SNARE"],[25800,"HIHAT"],[26014,"HIHAT"],[26229,"KICK"],[26229,"HIHAT"],[26443,"HIHAT"],[26657,"SNARE"],[26657,"HIHAT"],[26871,"HIHAT"]];
+const MARK={0:'♩=100',1:'반복',3:'1번 괄호',4:'반복',6:'2번 괄호',7:'♩=140',9:'D.S.',10:'segno',11:'To Coda',12:'Coda'};
+const PADS=['HIHAT','SNARE','KICK'];
+const NAMES={HIHAT:'하이햇',SNARE:'스네어',KICK:'킥'};
+const COLOR_TOKEN={HIHAT:'--s4',SNARE:'--s1',KICK:'--s2'};
 
-const aA = document.getElementById('aAccomp'), aF = document.getElementById('aFull');
-let cur = aA;
-const playBtn = document.getElementById('play'), icon = document.getElementById('playIcon');
-const PLAY = '<path d="M7 4.5v15l13-7.5z"/>', PAUSE = '<path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/>';
-function setIcon() { const p = !cur.paused; icon.innerHTML = p ? PAUSE : PLAY; playBtn.setAttribute('aria-label', p ? '일시 정지' : '재생'); }
-playBtn.addEventListener('click', () => { if (cur.paused) cur.play().catch(() => {}); else cur.pause(); });
-[aA, aF].forEach(a => { a.addEventListener('play', setIcon); a.addEventListener('pause', setIcon); a.addEventListener('ended', setIcon); });
-function switchTo(next, btnOn, btnOff) {
-  if (next === cur) return;
-  const t = cur.currentTime, playing = !cur.paused;
-  cur.pause(); cur = next; cur.currentTime = t;
-  if (playing) cur.play().catch(() => {});
-  btnOn.setAttribute('aria-pressed', 'true'); btnOff.setAttribute('aria-pressed', 'false'); setIcon();
+const chips=document.getElementById('chips');
+DATA.order.forEach((m,i)=>{const c=document.createElement('div');c.className='chip';c.innerHTML=m+'<small>'+(MARK[i]||'&nbsp;')+'</small>';chips.appendChild(c);});
+const chipEls=[...chips.children];
+
+const aA=document.getElementById('aAccomp'),aF=document.getElementById('aFull');
+let cur=aA;
+const playBtn=document.getElementById('play'),icon=document.getElementById('playIcon');
+const PLAY='<path d="M7 4.5v15l13-7.5z"/>',PAUSE='<path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/>';
+function setIcon(){const p=!cur.paused;icon.innerHTML=p?PAUSE:PLAY;playBtn.setAttribute('aria-label',p?'일시 정지':'재생');}
+playBtn.addEventListener('click',()=>{if(cur.paused)cur.play().catch(()=>{});else cur.pause();});
+[aA,aF].forEach(a=>['play','pause','ended'].forEach(ev=>a.addEventListener(ev,setIcon)));
+function switchTo(next,on,off){
+  if(next===cur)return;
+  const t=cur.currentTime,playing=!cur.paused;
+  cur.pause();cur=next;cur.currentTime=t;
+  if(playing)cur.play().catch(()=>{});
+  on.setAttribute('aria-pressed','true');off.setAttribute('aria-pressed','false');setIcon();
 }
-const bA = document.getElementById('srcAccomp'), bF = document.getElementById('srcFull');
-bA.addEventListener('click', () => switchTo(aA, bA, bF));
-bF.addEventListener('click', () => switchTo(aF, bF, bA));
+const bA=document.getElementById('srcAccomp'),bF=document.getElementById('srcFull');
+bA.addEventListener('click',()=>switchTo(aA,bA,bF));
+bF.addEventListener('click',()=>switchTo(aF,bF,bA));
 
-const cv = document.getElementById('lanes'), ctx = cv.getContext('2d');
-const clock = document.getElementById('clock');
-const WINDOW = 5.0;          // 화면에 보이는 초
-const HEAD = 0.22;           // 재생선 위치(가로 비율)
-function fmt(t) { const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + s.toFixed(1).padStart(4, '0'); }
-function resize() {
-  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
-  cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
-  ctx.setTransform(d, 0, 0, d, 0, 0);
-}
-function draw() {
-  const W = cv.clientWidth, H = cv.clientHeight, t = cur.currentTime || 0;
-  const labelW = W < 520 ? 64 : 84, plotW = W - labelW, laneH = H / PADS.length;
-  const x0 = labelW + plotW * HEAD, pps = plotW / WINDOW;
-  const tx = s => x0 + (s - t) * pps;
-  ctx.clearRect(0, 0, W, H);
-  // 레인 바탕
-  PADS.forEach((p, i) => {
-    ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.025)' : 'rgba(255,255,255,0)';
-    ctx.fillRect(labelW, i * laneH, plotW, laneH);
-    ctx.fillStyle = tok('--ink-faint');
-    ctx.font = '12px ' + tok('--font');
-    ctx.textBaseline = 'middle';
-    ctx.fillText(NAMES[p], 10, i * laneH + laneH / 2);
+const cv=document.getElementById('lanes'),ctx=cv.getContext('2d'),clock=document.getElementById('clock');
+const WINDOW=5.0,HEAD=0.2;
+const fmt=t=>{const m=Math.floor(t/60),s=t-m*60;return m+':'+s.toFixed(1).padStart(4,'0');};
+function resize(){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0);}
+function geom(W){const lw=W<520?52:64;return{lw,pw:W-lw,x0:lw+(W-lw)*HEAD};}
+function draw(){
+  const css=getComputedStyle(document.documentElement),tok=n=>css.getPropertyValue(n).trim();
+  const W=cv.clientWidth,H=cv.clientHeight,t=cur.currentTime||0,{lw,pw,x0}=geom(W),pps=pw/WINDOW,laneH=H/PADS.length;
+  const tx=s=>x0+(s-t)*pps;
+  ctx.clearRect(0,0,W,H);
+  ctx.font='12px '+getComputedStyle(document.body).fontFamily;ctx.textBaseline='middle';
+  PADS.forEach((p,i)=>{
+    ctx.fillStyle=tok('--ink-2');ctx.fillText(NAMES[p],10,i*laneH+laneH/2);
+    if(i){ctx.strokeStyle=tok('--grid');ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(lw,i*laneH+.5);ctx.lineTo(W,i*laneH+.5);ctx.stroke();}
   });
-  // 마디선
-  ctx.save(); ctx.beginPath(); ctx.rect(labelW, 0, plotW, H); ctx.clip();
-  DATA.measureStart.concat([DATA.durationSec]).forEach((s, i) => {
-    const x = tx(s); if (x < labelW - 2 || x > W + 2) return;
-    ctx.strokeStyle = tok('--line'); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); ctx.stroke();
-    if (i < DATA.order.length) {
-      ctx.fillStyle = tok('--ink-faint'); ctx.font = '11px ' + tok('--mono'); ctx.textBaseline = 'top';
-      ctx.fillText(DATA.order[i], x + 4, 3);
-    }
-  });
-  // 노트
-  for (const [ms, pad] of NOTES) {
-    const s = ms / 1000, x = tx(s);
-    if (x < labelW - 10 || x > W + 10) continue;
-    const i = PADS.indexOf(pad), y = i * laneH + laneH / 2;
-    const past = s <= t, near = Math.abs(s - t) < 0.06;
-    ctx.globalAlpha = past ? 0.35 : 1;
-    ctx.fillStyle = COLORS[pad];
-    const r = near ? Math.min(laneH * 0.42, 11) : Math.min(laneH * 0.3, 7);
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1;
+  ctx.save();ctx.beginPath();ctx.rect(lw,0,pw,H);ctx.clip();
+  ctx.strokeStyle=tok('--axis');ctx.lineWidth=1;
+  DATA.measureStart.forEach(s=>{const x=tx(s);if(x<lw-2||x>W+2)return;ctx.beginPath();ctx.moveTo(x+.5,0);ctx.lineTo(x+.5,H);ctx.stroke();});
+  for(const [ms,pad] of NOTES){
+    const i=PADS.indexOf(pad);if(i<0)continue;
+    const s=ms/1000,x=tx(s);if(x<lw-10||x>W+10)continue;
+    const near=Math.abs(s-t)<0.06;
+    ctx.globalAlpha=s<=t?0.3:1;ctx.fillStyle=tok(COLOR_TOKEN[pad]);
+    ctx.beginPath();ctx.arc(x,i*laneH+laneH/2,near?9:6,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
   }
   ctx.restore();
-  // 재생선
-  ctx.strokeStyle = tok('--brass'); ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0, H); ctx.stroke();
-  // 연주 순서 칩
-  let k = 0; DATA.measureStart.forEach((s, i) => { if (t >= s) k = i; });
-  chipEls.forEach((c, i) => c.classList.toggle('now', i === k));
-  clock.textContent = fmt(t) + ' / ' + fmt(DATA.durationSec);
+  ctx.strokeStyle=tok('--ink');ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x0,0);ctx.lineTo(x0,H);ctx.stroke();
+  let k=0;DATA.measureStart.forEach((s,i)=>{if(t>=s)k=i;});
+  chipEls.forEach((c,i)=>c.classList.toggle('now',i===k));
+  clock.textContent=fmt(t)+' / '+fmt(DATA.durationSec);
   requestAnimationFrame(draw);
 }
-cv.addEventListener('click', e => {
-  const r = cv.getBoundingClientRect(), W = r.width;
-  const labelW = W < 520 ? 64 : 84, plotW = W - labelW, x0 = labelW + plotW * HEAD;
-  const s = (cur.currentTime || 0) + (e.clientX - r.left - x0) / (plotW / WINDOW);
-  cur.currentTime = Math.max(0, Math.min(DATA.durationSec, s));
+cv.addEventListener('click',e=>{const r=cv.getBoundingClientRect(),{pw,x0}=geom(r.width);cur.currentTime=Math.max(0,Math.min(DATA.durationSec,(cur.currentTime||0)+(e.clientX-r.left-x0)/(pw/WINDOW)));});
+cv.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight')cur.currentTime=Math.min(DATA.durationSec,cur.currentTime+2);
+  if(e.key==='ArrowLeft')cur.currentTime=Math.max(0,cur.currentTime-2);
+  if(e.key===' '){e.preventDefault();playBtn.click();}
 });
-cv.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight') cur.currentTime = Math.min(DATA.durationSec, cur.currentTime + 2);
-  if (e.key === 'ArrowLeft') cur.currentTime = Math.max(0, cur.currentTime - 2);
-  if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
-});
-window.addEventListener('resize', resize);
-resize(); requestAnimationFrame(draw);
+window.addEventListener('resize',resize);
+resize();requestAnimationFrame(draw);
 </script>
 </body>
 </html>
