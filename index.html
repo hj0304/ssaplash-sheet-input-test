@@ -90,6 +90,8 @@ section>h2{font-size:26px;margin:0 0 6px;scroll-margin-top:24px}
 .tbl tr:last-child td{border-bottom:0}
 .tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .small{font-size:13px;color:var(--muted)}
+table.listen audio{width:100%;min-width:200px;height:34px;display:block}
+table.listen td{vertical-align:middle}
 .fig{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin:16px 0;box-shadow:var(--shadow)}
 .fig .ft{font-weight:700;font-size:15px}
 .fig .fs{font-size:13px;color:var(--ink-2);margin:2px 0 10px}
@@ -124,8 +126,9 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);paddin
     <a href="#result">1. 결론</a>
     <a href="#demo">2. 시연</a>
     <a href="#samples">3. 실제 곡 169곡</a>
-    <a href="#omr">4. 사진·PDF 인식</a>
-    <a href="#plan">5. 제안</a>
+    <a href="#listen">4. 실제 곡 듣기</a>
+    <a href="#omr">5. 사진·PDF 인식</a>
+    <a href="#plan">6. 제안</a>
   </div>
 </nav>
 
@@ -204,11 +207,26 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);paddin
       <tr><td>시작 위치·기타</td><td class="n">6</td><td>곡 처음이 통째로 밀리거나 원인 미확인</td></tr>
     </tbody>
   </table></div>
-  <p class="small">드럼 음표 150,490개 중 5.6%는 콩가·탬버린·카우벨 같은 패드에 없는 타악기라 뺐음. 169곡 모두 MuseScore 3.6.2로 내보낸 파일이고, MuseScore 4 파일은 따로 확인하지 못했음. 원곡 저작권 때문에 실제 곡 소리는 이 페이지에 올리지 않음.</p>
+  <p class="small">드럼 음표 150,490개 중 5.6%는 콩가·탬버린·카우벨 같은 패드에 없는 타악기라 뺐음. 169곡 모두 MuseScore 3.6.2로 내보낸 파일이고, MuseScore 4 파일은 따로 확인하지 못했음.</p>
+</section>
+
+<section id="listen">
+  <h2>4. 실제 곡 듣기</h2>
+  <p class="sub">위 169곡 중 4곡. 악보만으로 만든 소리이고 원곡 음원은 쓰지 않았음. 악보에 보컬 파트가 있으면 합성 목소리로 들어감.</p>
+  <div class="tbl"><table class="listen">
+    <thead><tr><th>곡</th><th>드럼리스 MR</th><th>드럼 포함</th><th class="n">채보 노트</th><th class="n">MuseScore 일치<br>드럼 · 음표</th></tr></thead>
+    <tbody>
+      <tr><td><b>Birds</b><div class="small">Imagine Dragons · 피아노·바이올린·기타 2·베이스</div></td><td><audio controls preload="none" src="real/96_mr.mp3"></audio></td><td><audio controls preload="none" src="real/96_full.mp3"></audio></td><td class="n">1,147</td><td class="n">1.00 · 1.00</td></tr>
+      <tr><td><b>Cake by the Ocean</b><div class="small">DNCE · 관악기 5·베이스</div></td><td><audio controls preload="none" src="real/159_mr.mp3"></audio></td><td><audio controls preload="none" src="real/159_full.mp3"></audio></td><td class="n">1,313</td><td class="n">1.00 · 0.99</td></tr>
+      <tr><td><b>Everybody Hurts</b><div class="small">R.E.M. · 보컬·기타·베이스·오르간</div></td><td><audio controls preload="none" src="real/22_mr.mp3"></audio></td><td><audio controls preload="none" src="real/22_full.mp3"></audio></td><td class="n">821</td><td class="n">1.00 · 1.00</td></tr>
+      <tr><td><b>misc</b><div class="small">PDMX 작성자 곡 · 기타·베이스</div></td><td><audio controls preload="none" src="real/169_mr.mp3"></audio></td><td><audio controls preload="none" src="real/169_full.mp3"></audio></td><td class="n">410</td><td class="n">1.00 · 1.00</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">팀 내부 확인용. 악보는 PDMX 공개 악보이고, 원곡 저작권은 각 권리자에게 있음.</p>
 </section>
 
 <section id="omr">
-  <h2>4. 사진·PDF 인식</h2>
+  <h2>5. 사진·PDF 인식</h2>
   <p class="sub">위 시험 악보 이미지를 OMR 도구 oemer에 넣었음. 스캔이 아닌 깨끗한 디지털 이미지임.</p>
   <div class="fig">
     <div class="ft">oemer 인식 결과</div>
@@ -224,7 +242,7 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);paddin
 </section>
 
 <section id="plan">
-  <h2>5. 제안</h2>
+  <h2>6. 제안</h2>
   <div class="callout">
     <div class="t">1차는 MusicXML만 받기</div>
     <ul>
