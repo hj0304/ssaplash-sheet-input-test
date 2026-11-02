@@ -123,7 +123,7 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);paddin
   <div class="links">
     <a href="#result">1. 결론</a>
     <a href="#demo">2. 시연</a>
-    <a href="#samples">3. 공개 샘플 변환</a>
+    <a href="#samples">3. 실제 곡 169곡</a>
     <a href="#omr">4. 사진·PDF 인식</a>
     <a href="#plan">5. 제안</a>
   </div>
@@ -184,19 +184,27 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);paddin
 </section>
 
 <section id="samples">
-  <h2>3. 공개 샘플 변환</h2>
-  <p class="sub">악보 프로그램에서 내보낸 공개 MusicXML 5개. 빠진 노트는 대부분 우리 패드에 없는 타악기임.</p>
+  <h2>3. 실제 곡 169곡</h2>
+  <p class="sub">MuseScore 공개 악보 데이터셋 PDMX에서 드럼·베이스·다른 악기가 같이 있는 록·팝·재즈 곡 169곡을 변환했음. 정답은 MuseScore가 같은 악보를 직접 재생해 내보낸 MIDI임.</p>
+  <div class="tiles">
+    <div class="tile"><div class="l">변환 실패</div><div class="v">0곡</div><div class="d">곡당 처리 61 ms, 최대 0.4 s</div></div>
+    <div class="tile"><div class="l">드럼 채보 일치</div><div class="v">129곡</div><div class="d">169곡 중 76%</div></div>
+    <div class="tile"><div class="l">드럼리스 MR 음표 일치</div><div class="v">112곡</div><div class="d">169곡 중 66%</div></div>
+    <div class="tile"><div class="l">둘 다 일치</div><div class="v">104곡</div><div class="d">169곡 중 62%</div></div>
+  </div>
+  <p class="small">일치: MuseScore MIDI와 같은 번호의 노트를 ±30ms 안에서 짝지은 F1이 0.95 이상. 시험 중 파서 문제 3개를 고쳐 둘 다 일치가 86곡에서 104곡으로 늘었음.</p>
   <div class="tbl"><table>
-    <thead><tr><th>파일</th><th>프로그램</th><th class="n">드럼 음표</th><th class="n">채보 노트</th><th>빠진 것</th></tr></thead>
+    <thead><tr><th>안 맞은 65곡 원인</th><th class="n">곡</th><th>설명</th></tr></thead>
     <tbody>
-      <tr><td>drums-basic-groove</td><td>BandBuddy</td><td class="n">24</td><td class="n">24</td><td>없음</td></tr>
-      <tr><td>drum_sample</td><td>Finale 27</td><td class="n">36</td><td class="n">28</td><td>카우벨 8</td></tr>
-      <tr><td>testDrumset1</td><td>MuseScore 0.7</td><td class="n">8</td><td class="n">4</td><td>콩가 2, GM 35·41 각 1</td></tr>
-      <tr><td>testDrumset2</td><td>MuseScore 0.7</td><td class="n">12</td><td class="n">6</td><td>콩가 5, GM 35 1</td></tr>
-      <tr><td>baiao-miranda</td><td>MuseScore 4.3</td><td class="n">48</td><td class="n">8</td><td>브라질 타악기 40</td></tr>
+      <tr><td>드럼리스 MR 음표만 다름</td><td class="n">22</td><td>꾸밈음·펼침화음·글리산도·트레몰로를 MuseScore는 풀어서 재생함. 음 자체는 있음</td></tr>
+      <tr><td>드럼 마디가 비어 있음</td><td class="n">18</td><td>MuseScore 3 내보내기가 마디 반복 기호(%)의 내용을 빼먹음. 파일에 음표가 없어 복구 불가</td></tr>
+      <tr><td>스윙</td><td class="n">10</td><td>악보에 "Swing" 글자만 있고 비율 정보가 없음. MuseScore는 스윙으로 재생, 우리는 정박</td></tr>
+      <tr><td>반복·점프 해석</td><td class="n">5</td><td>D.S.·Coda가 복잡한 곡에서 연주 순서가 다름</td></tr>
+      <tr><td>늘임표</td><td class="n">4</td><td>MuseScore가 늘임표 길이만큼 늦춰 재생</td></tr>
+      <tr><td>시작 위치·기타</td><td class="n">6</td><td>곡 처음이 통째로 밀리거나 원인 미확인</td></tr>
     </tbody>
   </table></div>
-  <p class="small">GM 35 Acoustic Bass Drum·41 Low Floor Tom은 대응표에 추가하면 됨.</p>
+  <p class="small">드럼 음표 150,490개 중 5.6%는 콩가·탬버린·카우벨 같은 패드에 없는 타악기라 뺐음. 169곡 모두 MuseScore 3.6.2로 내보낸 파일이고, MuseScore 4 파일은 따로 확인하지 못했음. 원곡 저작권 때문에 실제 곡 소리는 이 페이지에 올리지 않음.</p>
 </section>
 
 <section id="omr">
@@ -221,7 +229,8 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);paddin
     <div class="t">1차는 MusicXML만 받기</div>
     <ul>
       <li>받는 형식: <code>.musicxml</code>·<code>.xml</code>·<code>.mxl</code>. 사용자에게 MuseScore 등에서 MusicXML로 내보내기를 안내</li>
-      <li>1차 구현 3~4일: MusicXML 읽기·반복 처리, GM→패드 대응표 보강, 워커 경로 추가, 드럼리스 MR 합성·업로드</li>
+      <li>드럼 채보 1차 3~4일: MusicXML 읽기·반복·템포 처리, 시험에서 고친 3개 반영, 마디 반복 기호 처리, GM→패드 대응표 보강, 워커 경로 추가</li>
+      <li>드럼리스 MR 2일 추가: 드럼 뺀 파트 합성·업로드. 꾸밈음·펼침화음은 MuseScore처럼 풀어서 재생</li>
     </ul>
   </div>
   <div class="tbl"><table>
@@ -229,7 +238,8 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--grid);paddin
     <tbody>
       <tr><td>HIHAT_PEDAL</td><td>채보 JSON은 8패드만 받음. 지금은 HIHAT으로 합쳐 냄</td></tr>
       <tr><td>템포 변경</td><td>노트 시각은 맞지만 <code>timing.bpm</code>에는 첫 템포 하나만 들어감</td></tr>
-      <tr><td>MR 소리 품질</td><td>합성 소리라 음원에서 분리한 드럼리스 MR보다 기계적임. 실제 곡 악보로는 아직 안 들어 봄</td></tr>
+      <tr><td>MR 소리 품질</td><td>합성 소리라 음원에서 분리한 드럼리스 MR보다 기계적임. 악보에 보컬 파트가 있으면 합성 목소리로 들어감</td></tr>
+      <tr><td>스윙 곡</td><td>파일에 비율이 없어 정박으로 나옴. 업로드 때 스윙 여부를 받을지 정해야 함</td></tr>
       <tr><td>사운드폰트</td><td>GeneralUser GS 배포 조건을 반입 전에 원문으로 확인</td></tr>
     </tbody>
   </table></div>
